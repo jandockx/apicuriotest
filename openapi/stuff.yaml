@@ -1,0 +1,727 @@
+---
+openapi: 3.0.2
+info:
+  title: kodiak-mandates
+  description: Service managing account mandates and grants
+  version: 1.0.0
+paths:
+  /mandates/health/I/health:
+    summary: Health of the service
+    get:
+      summary: Health of the service
+      description: Checks all dependencies, and returns a consolidated status object
+      responses:
+        200:
+          description: The server is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MandatesHealth'
+  /mandates/I/mandate/{mandateId}:
+    get:
+      responses:
+        200:
+          description: The Mandate with ID {mandateId}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mandate'
+        404:
+          description: Not Found
+    parameters:
+    - name: mandateId
+      in: path
+      description: Id of the Mandate in Mandates' persistent storage
+      required: true
+  /mandates/I/accountMandate/{accountId}/{mandateId}/mandateGrant/{sourceAccountId}/{sourceMandateId}:
+    get:
+      parameters:
+      - name: tk
+        in: query
+        description: knowledge date; default is the Start of Transaction
+        required: false
+        schema:
+          format: date-time
+          type: string
+      responses:
+        200:
+          description: The Mandate Grant for the Account Mandate for Mandate {mandateId}
+            of Account {accountId}, from the Account Mandate for Mandate {sourceMandateIs}
+            of Account {sourceAccountId}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedMandateGrant'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+    put:
+      summary: Create a Delegated Mandate Grant, or update its validity
+      description: If the Mandate Grant does not yet, exist, it is created. If it
+        does already exist, a new validity is created.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewValidity'
+        required: true
+      responses:
+        200:
+          description: The updated object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedMandateGrant'
+        201:
+          description: The created object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedMandateGrant'
+        401:
+          description: Unauthorized
+    parameters:
+    - name: accountId
+      in: path
+      description: Id of the Account of the Account Mandate this is a Mandate Grant
+        for
+      required: true
+      schema:
+        type: string
+    - name: mandateId
+      in: path
+      description: Persistence ID of the Mandate of the Account Mandate this is a
+        Mandate Grant for
+      required: true
+      schema:
+        type: number
+    - name: sourceAccountId
+      in: path
+      description: Id of the Account of the Account Mandate this Mandate Grant is
+        granted from
+      required: true
+      schema:
+        type: string
+    - name: sourceMandateId
+      in: path
+      description: Persistence ID of the Mandate of the Account Mandate this Mandate
+        Grant is granted from
+      required: true
+      schema:
+        type: number
+  /mandates/I/accountMandate/{accountId}/{mandateId}:
+    summary: An Account Mandate expresses that an Account holds a Mandate at some
+      points in time.
+    description: An Account Mandate expresses that an Account holds a Mandate at some
+      points in time. Its semantics are time-dependent. The Account that holds the
+      Mandate is authorized to perform the resource actions described by the Mandate's
+      Mandate Template, interpolated with the actualParameters of the Mandate. An
+      Account Mandate is a collection of Mandate Grants, whose composition and validity
+      change over time. Throughout this evolution, the Account Mandate is the fixed
+      point of reference as source of Delegated Mandate Grant instances.
+    get:
+      summary: Get the Account Mandate, as known at tk
+      description: Returns Not Found if there is no such Account Mandate, or it is
+        not known at tk.
+      parameters:
+      - name: tk
+        in: query
+        description: knowledge date; default is the Start of Transaction
+        required: false
+        schema:
+          format: date-time
+          type: string
+      responses:
+        200:
+          description: The Account Mandate for {accountId} and {mandateId}, as known
+            at tk
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountMandate'
+        404:
+          description: There is no Account Mandate for {accountId} and {mandateHash},
+            or it is not known at tk
+    parameters:
+    - name: accountId
+      in: path
+      description: Id of the Account this is an Account Mandate for in the IdP
+      required: true
+      schema:
+        type: string
+    - name: mandateId
+      in: path
+      description: Persistence ID of the Mandate this is an Account Mandate for in
+        Mandates' persistent storage
+      required: true
+      schema:
+        type: number
+  /mandates/I/accountMandate/{accountId}/{mandateId}/mandateGrant/{sourceAccountId}/{sourceMandateId}/validities:
+    get:
+      parameters:
+      - name: tk
+        in: query
+        description: knowledge date; default is the Start of Transaction
+        required: false
+        schema:
+          format: date-time
+          type: string
+      responses:
+        200:
+          description: The validities of the Mandate Grant for the Account Mandate
+            for Mandate {mandateId} of Account {accountId}, from the Account Mandate
+            for Mandate {sourceMandateIs} of Account {sourceAccountId}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DelegatedMandateGrantValidities'
+        401:
+          description: Unauthorized
+        404:
+          description: The Mandate Grant is not found
+    parameters:
+    - name: accountId
+      in: path
+      description: Id of the Account of the Account Mandate this is a Mandate Grant
+        for
+      required: true
+      schema:
+        type: string
+    - name: mandateId
+      in: path
+      description: Persistence ID of the Mandate of the Account Mandate this is a
+        Mandate Grant for
+      required: true
+      schema:
+        type: number
+    - name: sourceAccountId
+      in: path
+      description: Id of the Account of the Account Mandate this Mandate Grant is
+        granted from
+      required: true
+      schema:
+        type: string
+    - name: sourceMandateId
+      in: path
+      description: Persistence ID of the Mandate of the Account Mandate this Mandate
+        Grant is granted from
+      required: true
+      schema:
+        type: number
+  /mandates/I/accountMandate/{accountId}/{mandateId}/mandateGrant/root:
+    get:
+      parameters:
+      - name: tk
+        in: query
+        description: knowledge date; default is the Start of Transaction
+        required: false
+        schema:
+          format: date-time
+          type: string
+      responses:
+        200:
+          description: The Root Mandate Grant for the Account Mandate for Mandate
+            {mandateId} of Account {accountId}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootMandateGrant'
+        401:
+          description: Unauthorized
+        404:
+          description: Not Found
+    put:
+      summary: Create a Root Mandate Grant, or update its validity
+      description: If the Mandate Grant does not yet, exist, it is created. If it
+        does already exist, a new validity is created.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewValidity'
+        required: true
+      responses:
+        200:
+          description: The updated object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootMandateGrant'
+        201:
+          description: The created object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootMandateGrant'
+        401:
+          description: Unauthorized
+    parameters:
+    - name: accountId
+      in: path
+      description: Id of the Account of the Account Mandate this is a Mandate Grant
+        for
+      required: true
+      schema:
+        type: string
+    - name: mandateId
+      in: path
+      description: Persistence ID of the Mandate of the Account Mandate this is a
+        Mandate Grant for
+      required: true
+      schema:
+        type: number
+  /mandates/I/accountMandate/{accountId}/{mandateId}/mandateGrant/root/validities:
+    get:
+      parameters:
+      - name: tk
+        in: query
+        description: knowledge date; default is the Start of Transaction
+        required: false
+        schema:
+          format: date-time
+          type: string
+      responses:
+        200:
+          description: The validities of the Root Mandate Grant for the Account Mandate
+            for Mandate {mandateId} of Account {accountId}
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RootMandateGrantValidities'
+        401:
+          description: Unauthorized
+        404:
+          description: The Mandate Grant is not found
+    parameters:
+    - name: accountId
+      in: path
+      description: Id of the Account of the Account Mandate this is a Mandate Grant
+        for
+      required: true
+      schema:
+        type: string
+    - name: mandateId
+      in: path
+      description: Persistence ID of the Mandate of the Account Mandate this is a
+        Mandate Grant for
+      required: true
+      schema:
+        type: number
+  /mandates/I/accountMandate/{accountId}:
+    get:
+      description: The response is never Not Found, but might be the empty collection
+      parameters:
+      - name: tk
+        in: query
+        description: knowledge date; default is the Start of Transaction
+        required: false
+        schema:
+          format: date-time
+          type: string
+      - name: validAt
+        in: query
+        description: ISO Date or empty. With an ISO Date, returns the Account Mandates
+          for the Account {accountId} that are valid at that time. When the value
+          is empty, returns all Account Mandates for the Account, without filtering
+          for validity. The default value is the value of tk.
+        schema:
+          format: date-time
+          type: string
+      responses:
+        200:
+          description: List of the Account Mandates of Account {accountId} that match
+            the query parameters.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountMandate'
+        401:
+          description: Unauthorized
+components:
+  schemas:
+    MandatesHealth:
+      title: Summary of the health of Mandates
+      description: Object describing the healt of the system
+      required:
+      - at
+      - database
+      - dns
+      - logs
+      - mandateTemplates
+      - sqs
+      - status
+      type: object
+      properties:
+        dns:
+          $ref: '#/components/schemas/ServiceHealthStatus'
+          description: Can we get the config information from DNS-SD?
+        database:
+          $ref: '#/components/schemas/ServiceHealthStatus'
+          description: Can we execute a simple query on the database?
+        mandateTemplates:
+          $ref: '#/components/schemas/ServiceHealthStatus'
+          description: Can we read a template from the Mandate Templates service?
+        sqs:
+          $ref: '#/components/schemas/ServiceHealthStatus'
+          description: Can we post a test event on SQS?
+        logs:
+          $ref: '#/components/schemas/ServiceHealthStatus'
+          description: Can we write a log statement to the central logging service?
+        status:
+          $ref: '#/components/schemas/ServiceHealthStatus'
+          description: Summary of the service health
+        at:
+          format: date-time
+          description: |-
+            Start of the transaction during which this health report was
+            created
+          type: string
+      example: |-
+        {
+            "at": "",
+            "dns": "OK",
+            "database": "OK",
+            "mandateTemplates": "OK",
+            "sqs": "OK",
+            "logs": "OK",
+            "status": "OK"
+        }
+    ServiceHealthStatus:
+      title: Enumeration of service health status values
+      description: |-
+        OK: 200 - the service is running within specifications;
+        WARNING: 265 - the service is running, but some requirements are not fulfilled;
+        ERROR: 465 - the service is running, but some crucial specifications are not fulfilled, and operation is not guaranteed;
+        UNREACHABLE: 500 - the service is not running or not available
+      enum:
+      - OK
+      - WARNING
+      - ERROR
+      - UNREACHABLE
+      example: '"OK"'
+    DelegatedMandateGrant:
+      description: A delegated grant
+      allOf:
+      - $ref: '#/components/schemas/MandateGrant'
+      - required:
+        - source
+        type: object
+        properties:
+          source:
+            type: string
+      example: |-
+        {
+            "$type": "DelegatedMandateGrant",
+            "href": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964/mandateGrant/google|luhgw093/38483",
+            "accountMandate": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964",
+            "source": "/mandates/I/accountMandate/google|luhgw093/38483",
+            "lastModified": "2018-12-19T08:31:42.737Z",
+            "lastModifiedBy": "choco|gfw92362",
+            "until": "2019-12-19T08:31:42.737Z"
+        }
+    RootMandateGrant:
+      description: A Mandate Grant without a source
+      allOf:
+      - $ref: '#/components/schemas/MandateGrant'
+      example: |-
+        {
+            "$type": "DelegatedMandateGrant",
+            "href": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964/mandateGrant/root",
+            "accountMandate": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964",
+            "lastModified": "2018-12-19T08:31:42.737Z",
+            "lastModifiedBy": "choco|gfw92362",
+            "until": "2019-12-19T08:31:42.737Z"
+        }
+    MandateGrantType:
+      title: Root Type for MandateGrantType
+      description: Discriminator for Mandate Grant subtypes
+      enum:
+      - RootMandateGrant
+      - DelegatedMandateGrant
+      example: '"RootMandateGrant"'
+    ActualParameters:
+      description: Map of formal parameter names of a Mandate Template to actual parameter
+        values. Both the formal parameter names and the actual parameter values are
+        strings.
+      type: object
+      example: |-
+        {
+            "pharmacyId": "5648813.pharmacy-edu.farmad.be",
+            "language": "nl-BE",
+            "skinColor": "#232323"
+        }
+      x-additonalProperties:
+        type: string
+    Validity:
+      title: Root Type for Validity
+      description: Instances express that their creator demands us to know from createdAt,
+        until a later instance is created, that the validity of the associated Mandate
+        Grant is limited in time to until.
+      required:
+      - createdAt
+      - createdBy
+      - until
+      - version
+      type: object
+      properties:
+        createdAt:
+          type: string
+        createdBy:
+          type: string
+        until:
+          format: date-time
+          type: string
+        version:
+          description: The version number of the validity.
+          type: number
+      example: |-
+        {
+            "createdAt": "2018-12-19T08:31:42.737Z",
+            "createdBy": "milk|fn02h86t208",
+            "version": 6456846,
+            "until": "2019-12-19T08:31:42.737Z"
+        }
+    DelegatedMandateGrantValidities:
+      description: A delegated grant with its validities
+      allOf:
+      - $ref: '#/components/schemas/MandateGrantValidities'
+      - required:
+        - source
+        type: object
+        properties:
+          source:
+            type: string
+      example: |-
+        {
+            "$type": "DelegatedMandateGrant",
+            "href": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964/mandateGrant/google|luhgw093/38483",
+            "accountMandate": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964",
+            "source": "/mandates/I/accountMandate/google|luhgw093/38483",
+            "lastModified": "2018-12-19T08:31:42.737Z",
+            "lastModifiedBy": "choco|gfw92362",
+            "validities": [
+                {
+                    "createdAt": "2018-12-19T08:31:42.737Z",
+                    "createdBy": "milk|fn02h86t208",
+                    "until": "2019-12-19T08:31:42.737Z"
+                },
+                {
+                    "createdAt": "2018-12-20T08:31:42.737Z",
+                    "createdBy": "coffee|fn02h86t208",
+                    "until": "2019-12-20T08:31:42.737Z"
+                }
+            ]
+        }
+    RootMandateGrantValidities:
+      description: A Mandate Grant without a source, with its validities
+      allOf:
+      - $ref: '#/components/schemas/MandateGrantValidities'
+      example: |-
+        {
+            "$type": "DelegatedMandateGrant",
+            "href": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964/mandateGrant/root",
+            "accountMandate": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964",
+            "source": "/mandates/I/accountMandate/google|luhgw093/38483",
+            "lastModified": "2018-12-19T08:31:42.737Z",
+            "lastModifiedBy": "choco|gfw92362",
+            "validities": [
+                {
+                    "createdAt": "2018-12-19T08:31:42.737Z",
+                    "createdBy": "milk|fn02h86t208",
+                    "until": "2019-12-19T08:31:42.737Z"
+                },
+                {
+                    "createdAt": "2018-12-20T08:31:42.737Z",
+                    "createdBy": "coffee|fn02h86t208",
+                    "until": "2019-12-20T08:31:42.737Z"
+                }
+            ]
+        }
+    MandateGrantValidities:
+      description: List of the Validities of a Mandate Grant. Validities are sorted
+        from highest to lowest version.
+      required:
+      - test
+      allOf:
+      - $ref: '#/components/schemas/MandateGrant'
+      - required:
+        - validities
+        type: object
+        properties:
+          source:
+            description: The Mandate Grant's Validities, known at tk
+            type: array
+            items:
+              $ref: '#/components/schemas/Validity'
+      example: |-
+        {
+            "$type": "DelegatedMandateGrant",
+            "href": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964/mandateGrant/google|luhgw093/38483",
+            "accountMandate": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964",
+            "source": "/mandates/I/accountMandate/google|luhgw093/38483",
+            "lastModified": "2018-12-19T08:31:42.737Z",
+            "lastModifiedBy": "choco|gfw92362",
+            "validities": [
+                {
+                    "createdAt": "2018-12-20T08:31:42.737Z",
+                    "createdBy": "coffee|fn02h86t208",
+                    "version": 416,
+                    "until": "2019-12-20T08:31:42.737Z"
+                },
+                {
+                    "createdAt": "2018-12-19T08:31:42.737Z",
+                    "createdBy": "milk|fn02h86t208",
+                    "version": 6456846,
+                    "until": "2019-12-19T08:31:42.737Z"
+                }
+            ]
+        }
+    NewValidity:
+      description: Body for creating a new Validity
+      required:
+      - until
+      type: object
+      properties:
+        until:
+          format: date-time
+          type: string
+      example: |-
+        {
+            "until": "2019-12-19T08:31:42.737Z"
+        }
+    AccountMandate:
+      title: Root Type for AccountMandate
+      description: An Account Mandate expresses that an Account holds a Mandate at
+        some points in time. Its semantics are time-dependent. The Account that holds
+        the Mandate is authorized to perform the resource actions described by the
+        Mandate's Mandate Template, interpolated with the actualParameters of the
+        Mandate. An Account Mandate is a collection of Mandate Grants, whose composition
+        and validity change over time. Throughout this evolution, the Account Mandate
+        is the fixed point of reference as source of Delegated Mandate Grant instances.
+      required:
+      - accountId
+      - mandateGrants
+      - lastModified
+      - lastModifiedBy
+      - mandate
+      - until
+      - href
+      type: object
+      properties:
+        href:
+          description: relative URI of the Account Mandate
+          type: string
+        accountId:
+          type: string
+        mandate:
+          description: relative URI of the Mandate
+          type: string
+        lastModified:
+          format: date-time
+          type: string
+        lastModifiedBy:
+          type: string
+        until:
+          format: date-time
+          type: string
+        mandateGrants:
+          description: Set of URIs of the Mandate Grants of this Account Mandate,
+            known at tk, and valid at validAt
+          type: array
+          items:
+            type: string
+      example: |-
+        {
+            "href": "/mandates/I/accountMandate/google|nm0f328b/1668648",
+            "accountId": "google|nm0f328b",
+            "mandate": "/mandates/I/mandate/1668648",
+            "lastModified": "2018-12-19T08:31:42.737Z",
+            "lastModifiedBy": "choco|gfw92362",
+            "until": "2019-12-19T08:31:42.737Z",
+            "mandateGrants": [
+                "/mandates/I/accountMandate/google|nm0f328b/1668648/google|nm0f328b/1668648",
+                "/mandates/I/accountMandate/google|nm0f328b/1668648/choco|f74t/1668648",
+                "/mandates/I/accountMandate/google|nm0f328b/1668648/mil|fg687t84tqw/8685",
+                "/mandates/I/accountMandate/google|nm0f328b/1668648/root"
+            ]
+        }
+    Mandate:
+      title: Root Type for Mandate
+      description: A Mandate is the binding of a Mandate Template with actualParameters.
+        A Mandate expresses that an Account that holds validly is authorized to perform
+        the resource actions described by its Mandate Template, interpolated with
+        the actualParameters.
+      required:
+      - id
+      - template
+      - actualParameters
+      type: object
+      properties:
+        href:
+          description: URI of the Mandate
+          type: integer
+        template:
+          description: Relative path of the Mandate Template in the Mandate Templates
+            Service, in a Mandate Templates Build
+          type: string
+        actualParameters:
+          $ref: '#/components/schemas/ActualParameters'
+          description: The actual parameters the Mandate Template is bound with
+          properties:
+            pharmacyId:
+              type: string
+            language:
+              type: string
+            skinColor:
+              type: string
+      example: |-
+        {
+            "href": "/mandates/I/mandate/56749678",
+            "template": "/I/functions/officina/counter/allActions",
+            "actualParameters": {
+                "pharmacyId": "5648813.pharmacy-edu.farmad.be",
+                "language": "nl-BE",
+                "skinColor": "#232323"
+            }
+        }
+    MandateGrant:
+      title: Root Type for MandateGrant
+      description: The root of the MandateGrant type's schema.
+      required:
+      - $type
+      - accountMandate
+      - lastModified
+      - lastModifiedBy
+      - until
+      - href
+      type: object
+      properties:
+        $type:
+          $ref: '#/components/schemas/MandateGrantType'
+        accountMandate:
+          description: relative of the Account Mandate this is a Mandate Grant for
+          type: string
+        lastModified:
+          format: date-time
+          type: string
+        lastModifiedBy:
+          type: string
+        until:
+          format: date-time
+          type: string
+        href:
+          description: relative URI of this resource
+          type: string
+      example: |-
+        {
+            "$type": "DelegatedMandateGrant",
+            "href": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964/mandateGrant/google|luhgw093/38483",
+            "accountMandate": "/mandates/I/accountMandate/fitBit|fno82ui34562/56964",
+            "source": "/mandates/I/accountMandate/google|luhgw093/38483",
+            "lastModified": "2018-12-19T08:31:42.737Z",
+            "lastModifiedBy": "choco|gfw92362",
+            "until": "2019-12-19T08:31:42.737Z"
+        }
